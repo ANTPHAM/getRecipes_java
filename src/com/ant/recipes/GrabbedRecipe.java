@@ -1,4 +1,4 @@
-package com.aubert.recipes;
+package com.ant.recipes;
 
 import java.util.ArrayList;
 
