@@ -1,4 +1,4 @@
-package com.aubert.recipes;
+package com.ant.recipes;
 
 import it.sauronsoftware.grab4j.html.HTMLDocument;
 import it.sauronsoftware.grab4j.html.HTMLDocumentFactory;
