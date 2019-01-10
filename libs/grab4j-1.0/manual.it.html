@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>grab4j manual</title>
+</head>
+
+<body>
+ <h1>Manuale di grab4j </h1>
+ <ul>
+   <li><a href="#1">Prima di cominciare </a></li>
+   <li><a href="#2">Web-grabbing con grab4j</a></li>
+   <li><a href="#3">L'approccio Java </a></li>
+   <li><a href="#4">L'approccio JavaScript </a>
+     <ul>
+       <li><a href="#4.1">Lo script di grabbing </a></li>
+       <li><a href="#4.2">Riferimenti globali </a></li>
+       <li><a href="#4.3">Funzioni globali </a></li>
+       <li><a href="#4.4">Metodi degli oggetti document </a></li>
+       <li><a href="#4.5">Metodi degli oggetti element</a></li>
+       <li><a href="#4.6">Metodi degli oggetti tag </a></li>
+       <li><a href="#4.7">Criteri di ricerca degli elementi </a></li>
+       <li><a href="#4.8">Uso di classi Java nello script di grabbing </a></li>
+       <li><a href="#4.9">Esempi</a></li>
+     </ul>
+   </li>
+ </ul>
+ <a name="1"></a>
+ <h1>Prima di cominciare </h1>
+ <p>Per utilizzare il grabber di  grab4j nella tua applicazione Java, devi aggiungere il file <em>grab4j.jar</em> al CLASSPATH. Poich&eacute; grab4j dipende da alcuni jar di terze parti (tutti posizionati nella directory <em>lib</em>) devi aggiungere anche questi al CLASSPATH.</p>
+ <p>grab4j richiede un ambiente di esecuzione Java J2SE versione 1.4 o successiva. </p>
+ <a name="2"></a>
+ <h1>Web-grabbing con grab4j</h1>
+ <p>Estrarre informazioni da un documento HTML online &egrave; un'operazione da svolgere in tre passi:</p>
+ <ol>
+   <li>Scaricare il documento dalla rete.</li>
+   <li>Interpretare il documento e costruirne una rappresentazione ad oggetti.</li>
+   <li>Estrarre informazioni dalla rappresentazione del documento, eseguendo la routine con la <em>logica di grabbing</em>. </li>
+ </ol>
+ <p>Il problema principale riguarda proprio la logica di grabbing. Una volta che un documento &egrave; stato scaricato ed interpretato, qualsiasi suo elemento pu&ograve; essere raggiunto mediante la rappresentazione ad oggetti. Tuttavia un documento contiene informazioni sia utili sia inutili. Normalmente una pagina web, oltre al suo contenuto principale, contiene anche elementi di navigazione, banner, loghi e strutture di layout. Anche considerando  il solo contenuto principale del documento, non &egrave; detto che si debba recuperarlo nella sua interezza. Pertanto la logica di grabbing serve per specificare quali elementi debbano essere recuperati e quali, invece, scartati.</p>
+ <p>Gli strumenti messi a disposizione da grab4j sono generici e  permettono di scaricare ed interpretare una qualsiasi pagina web. Fatto ci&ograve; grab4j non pu&ograve; sapere quale sia la logica di grabbing di volta in volta necessaria, poich&eacute; questa dipende dal particolare documento esaminato e dagli scopi dell'applicazione. Ad ogni modo grab4j  fornisce una serie di strumenti  utili per programmare ed &quot;iniettare&quot; nella libreria la peculiare logica di grabbing richiesta.</p>
+ <p>Normalmente la logica di grabbing si realizza selezionando alcuni elementi del codice HTML e scartandone altri. Naturalmente quali elementi debbano essere considerati dipende dal contesto. Ad esempio, per eseguire il grabbing di una pagina web con delle previsioni meteo, si dovr&agrave; esaminarne il codice HTML e poi spiegare a grab4j cosa fare. Una cosa del tipo: &quot;estrai il testo che &egrave; nel terzo elemento <em>&lt;p&gt;</em> dall'alto, poi prendi le immagini che sono nel <em>&lt;div&gt;</em> immediatamente successivo, ma solo se hanno un attributo <em>width</em> con valore 50, e restituisci il risultato aggregandolo in questa struttura Java <em>it.mieiclassi.Meteo</em> che ho preparato due minuti fa&quot;...</p>
+ <p>Per far questo &egrave; possibile sfruttare due differenti approcci, uno basato su Java e l'altro su JavaScript.</p>
+ <p>Il primo &egrave; molto semplice e non costituisce nulla di nuovo per il programmatore Java. Sostanzialmente si chiede a grab4j di scaricare un documento e di costruirne una rappresentazione. Una volta completata l'operazione, la rappresentazione ad oggetti del documento viene presa in carico dal programmatore che, aiutandosi con i metodi e gli strumenti messi a disposizione dal pacchetto, esegue la sua logica di grabbing e fa quel che deve fare. Questa tecnica, bench&eacute; semplice, soffre di un noioso problema. Le pagine Web sono mutevoli sia nei contenuti sia nella struttura. Finch&eacute; si tratta dei soli contenuti, non c'&egrave; problema, visto che lo scopo di un grabber &egrave; proprio prelevare i dati pi&ugrave; aggiornati. Anche quella che &egrave; la struttura della pagina web  al momento della scrittura della logica di grabbing, per&ograve;, potrebbe cambiare nel tempo, e questo costituisce un problema. Un cambio sulla struttura della pagina, anche di piccola entit&agrave;, potrebbe rendere inservibile la routine scritta in precedenza. Non resta che correggere la routine affinch&eacute; rifletta i cambi apportati alla struttura della pagina. Se la routine &egrave; scritta in Java bisogna modificare le classi che la implementano, ricompilare, impacchettare di nuovo l'applicazione, distribuire la nuova versione del software, oppure fermare le istanze in esecuzione e sostituirle, quindi riavviare il tutto. Non &egrave; proprio il massimo.</p>
+ <p>Se la logica di grabbing viene invece espressa mediante uno script interpretato, possibilmente conservato in un file separato dall'applicazione e non integrato al suo interno, il cambio della struttura della pagina web pu&ograve; essere gestito pi&ugrave; velocemente. Quello che occorre &egrave; correggere lo script e sostituire il file richiamato dall'applicazione. Se il software &egrave; ben fatto non c'&egrave; neanche bisogno di riavviare l'applicazione, figuriamoci quindi di ricompilarla.</p>
+ <a name="3"></a>
+ <h1>L'approccio Java </h1>
+ <p>Mettere in pratica l'approccio basato su Java &egrave; semplicissimo. Basta usare la classe <em>it.sauronsoftware.grab4j.html.HTMLDocumentFactory</em> per ottenere la rappresentazione ad oggetti di un documento web: </p>
+ <pre>HTMLDocument doc = HTMLDocumentFactory.buildDocument(&quot;http://www.host.com/page.html&quot;);</pre>
+ <p>L'oggetto restituito &egrave; di tipo <em>it.sauronsoftware.grab4j.html.HTMLDocument</em>. Gli elementi nella rappresentazione possono essere esplorati con i metodi <em>getElements()</em>, <em>getElementCount()</em>, <em>getElement()</em>, <em>getElementById()</em>, <em>getElementsByAttribute()</em> e <em>getElementsByTag()</em>. Strumenti di ricerca avanzata sono realizzati dai metodi <em>searchElements()</em> e <em>searchElement()</em>, e dalla classe the <em>it.sauronsoftware.grab4j.html.search.Criteria</em>.</p>
+ <p>Ciascun elemento del documento &egrave; rappresentato con un'istanza della classe <em>it.sauronsoftware.grab4j.html.HTMLElement</em>. I riferimenti di tipo <em>HTMLElement</em> portano sempre ad oggetti pi&ugrave; specifici, come <em>HTMLText</em>, <em>HTMLTag</em>, <em>HTMLImage</em> e <em>HTMLLink</em>. E' quindi possibile eseguire il casting ed accedere ai metodi aggiuntivi di queste classi.</p>
+ <p>C'&egrave; poco altro da dire, se non che una guida metodica alle funzionalit&agrave; offerte &egrave; nei <a href="javadoc/index.html">javadoc</a> di grab4j.</p>
+ <a name="4"></a>
+ <h1>L'approccio JavaScript </h1>
+ <p>La classe <em>it.sauronsoftware.grab4j.WebGrabber</em> permette il grabbing di un documento web con una sola chiamata Java:</p>
+ <pre>URL pageUrl = new URL(&quot;http://www.host.com/page.html&quot;);
+File scriptFile = new File(&quot;grabbing-logic.js&quot;);
+Object result = WebGrabber.grab(pageUrl, scriptFile);</pre>
+ <p>Due sono le informazioni richieste: la pagina web da analizzare e la logica di grabbing, che viene &quot;iniettata&quot; nella libreria attraverso uno script JavaScript. Lo script ha il compito di prendere la rappresentazione del documento ed estrarne i dati di interesse, possibilmente assemblandoli in una struttura. Quanto elaborato dallo script e da esso indicato come il risultato dell'operazione viene restituito dal metodo <em>grab()</em> sotto forma di oggetto Java. L'applicazione pu&ograve; a questo punto esaminare ed utilizzare il risultato ottenuto. </p>
+ <p>Per approfondire le diverse forme del metodo <em>grab()</em> si faccia riferimento al <a href="javadoc/it/sauronsoftware/grab4j/WebGrabber.html">javadoc</a> della classe <em>WebGrabber</em>.</p>
+ <a name="4.1"></a>
+ <h2>Lo script di grabbing </h2>
+ <p>Lo script di grabbing deve essere realizzato con linguaggio <a href="http://it.wikipedia.org/wiki/ECMAScript">JavaScript/ECMAScript</a>. Questo significa che si pu&ograve; fare uso di tutte le funzioni, le classi e le costanti della libreria ECMAScript, come le funzioni <em>parseInt()</em> e <em>isNaN()</em>, la classe <em>Math</em> e la costante <em>Infinity</em>.</p>
+ <a name="4.2"></a>
+ <h2>Riferimenti globali </h2>
+ <p>Oltre ai riferimenti globali messi a disposizione da ECMAScript, gli script di grabbing ricevono altre due variabili.</p>
+ <h3>document</h3>
+ <p>Questa &egrave; una sorta di variabile di input per lo script. Contiene il riferimento alla rappresentazione del documento scaricato ed analizzato. Chiamando i metodi di questo oggetto si accede alle informazioni da estrarre.</p>
+ <pre>titleElement = document.getElementById(&quot;titolo&quot;);</pre>
+ <h3>result</h3>
+ <p>Questa, invece, &egrave; una sorta di variabile di output. Quando il lavoro di estrazione delle informazioni &egrave; completato, queste vanno aggregate in un unico oggetto (tipicamente, una semplice struttura dati) e restituite. Impostando il valore della variabile <em>result</em> si specifica cosa restituire al codice chiamante.</p>
+ <pre>result = myResult; </pre>
+ <a name="4.3"></a>
+ <h2>Funzioni globali </h2>
+ <p>Oltre alle funzioni messe a disposizione da ECMAScript gli script di grabbing possono richiamare anche alcune altre funzioni.</p>
+ <h3>print(&lt;string&gt;)</h3>
+ <p>Stampa una stringa nel canale di standard output. E' utile per fare il debug dello script.</p>
+ <pre>print(&quot;ciao mondo!&quot;);
+print(document.getElementCount());</pre>
+ <h3>openDocument(&lt;string&gt;)</h3>
+ <p>Scarica ed analizza la pagina HTML all'indirizzo passato come parametro, restituendo un riferimento alla sua rappresentazione ad oggetti. Questa funzione permette allo script di aprire ed analizzare altri documenti oltre a quello ricevuto nel riferimento <em>document</em>, che rappresenta il punto di partenza dell'operazione di grabbing. Ci sono dei casi in cui ci&ograve; torna molto utile. Si immagini, ad esempio, che la pagina consegnata al metodo <em>grab()</em> contenga una lista di collegamenti alle informazioni di interesse, e non le informazioni stesse. Lo script pu&ograve; prendere in gestione la lista e, per ogni collegamento riscontrato, andare ad aprire il documento riferito ed estrarre da esso le informazioni volute. Quando capita una situazione simile si &egrave; veramente contenti del fatto che esista una funzione <em>openDocument()</em>.</p>
+ <pre>var doc2 = openDocument(&quot;http://www.sito.com/pagina.html&quot;);</pre>
+ <h3>encodeEntities(&lt;string&gt;)</h3>
+ <p>Questa funzione prende una stringa e la codifica come HTML. Ci&ograve; significa che ogni carattere riservato o problematico contenuto nella stringa sar&agrave; sostituito da un'entit&agrave; di HTML (per intendersi, quelle del tipo <em>&amp;nome;</em> oppure <em>&amp;#xx;</em>). Una nuova stringa contenente il testo originale ricodificato in HTML viene generata e restituita.</p>
+ <pre>var str = encodeEntities(&quot;&lt;test&gt;&quot;);</pre>
+ <h3>decodeEntities(&lt;string&gt;)</h3>
+ <p>Il contrario di <em>encodeEntities()</em>. Questa funzione prende in gestione una stringa che si suppone codificata in HTML, interpretandone le entit&agrave; e generando una nuova stringa con le medesime decodificate.</p>
+ <pre>var str = decodeEntities(&quot;&amp;lt;test&amp;gt;&quot;);</pre>
+ <a name="4.4"></a>
+ <h2>Metodi degli oggetti document </h2>
+ <p>Naturalmente, come in Java cos&igrave; in JavaScript, &egrave; possibile esplorare gli elementi presenti nella rappresentazione di un documento HTML. Nello script si possono avere diversi oggetti di questo tipo. Il primo &egrave; quello riferito dalla variabile globale <em>document</em>, che rappresenta il documento principale, mentre altri possono essere costruiti chiamando la funzione <em>openDocument()</em>. I metodi disponibili sono riportati di seguito. </p>
+ <h3>getElementCount()</h3>
+ <p>Restituisce il numero degli elementi di privo livello del documento. Tipicamente ce ne sono un paio, il primo &egrave; il doctype, il secondo &egrave; il tag <em>&lt;html&gt;</em>, ma a seconda di come &egrave; scritta la pagina pu&ograve; andare diversamente.</p>
+ <pre>var n = document.getElementCount();</pre>
+ <h3>getElement(&lt;integer&gt;)</h3>
+ <p>Restituisce l'elemento di primo livello all'indice specificato.</p>
+ <pre>for (var i = 0; i &lt; document.getElementCount(); i++) {
+  var el = document.getElement(i);
+  // ...
+}</pre>
+ <h3>getElementById(&lt;string&gt;)</h3>
+ <p>Cerca fra tutti gli elementi del documento, ricorsivamente (quindi non solo su quelli di primo livello, ma anche nei loro figli, nei figli dei loro figli e cos&igrave; via), finch&eacute; non ne trova uno che abbia il valore specificato come argomento nel suo attributo <em>id</em>. Se nessun elemento viene individuato, allora restituisce <em>null</em>.</p>
+ <pre>var el = document.getElementById(&quot;titolo&quot;);</pre>
+ <h3>getElementsByTag(&lt;string&gt;)</h3>
+ <p>Cerca ricorsivamente fra tutti gli elementi del documento, collezionando quelli corrispondenti al tag specificato, che restituisce in un array. Se nessun tag del tipo specificato viene individuato, restituisce un array vuoto.</p>
+ <pre>var elements = document.getElementsByTag(&quot;h1&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <h3>getElementsByAttribute(&lt;string&gt;, &lt;string&gt;)</h3>
+ <p>Cerca ricorsivamente fra tutti gli elementi del documento, collezionando quelli che hanno l'attributo specificato nel primo parametro con un valore uguale a quello specificato nel secondo. Restituisce un array con gli elementi in grado di soddisfare il requisito. Se nessun elemento viene individuato, restituisce un array vuoto.</p>
+ <pre>var elements = document.getElementsByAttribute(&quot;align&quot;, &quot;center&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <h3>searchElements(&lt;string&gt;)</h3>
+ <p>Cerca ricorsivamente fra tutti gli elementi del documento, restituendo un array con gli elementi in grado di soddisfare il particolare criterio fornito in argomento. Se nessun elemento viene individuato, restituisce un array vuoto.</p>
+ <pre>var elements = document.searchElements(&quot;html/body/.../img(src=*.jpg)&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <p>I criteri di ricerca per questo tipo di metodi saranno illustrati <a href="#4.7">in seguito</a>.</p>
+ <h3>searchElement(&lt;string&gt;)</h3>
+ <p>Cerca ricorsivamente fra tutti gli elementi del documento, finch&eacute; non ne individua uno in grado di soddisfare il particolare criterio fornito in argomento. Se nessun elemento soddisfa il criterio restituisce <em>null</em>.</p>
+ <pre>var el = document.searchElement(&quot;html/body/ul/li&quot;);</pre>
+ <p>I criteri di ricerca per questo tipo di metodi saranno illustrati <a href="#4.7">in seguito</a>.</p>
+ <a name="4.5"></a>
+ <h2>Metodi degli oggetti element </h2>
+ <p>Si &egrave; visto come estrarre gli elementi dal documento, ora si vedr&agrave; come estrarre informazioni e sotto-elementi da un elemento qualsiasi.</p>
+ <h3>getElementCount()</h3>
+ <p>Restituisce il numero dei sotto-elementi dell'elemento.</p>
+ <pre>var n = el.getElementCount();</pre>
+ <h3>getElement(&lt;integer&gt;)</h3>
+ <p>Restituisce il sotto-elemento all'indice specificato.</p>
+ <pre>for (var i = 0; i &lt; el.getElementCount(); i++) {
+  var el2 = el.getElement(i);
+  // ...
+}</pre>
+ <h3>getElementById(&lt;string&gt;)</h3>
+ <p>Cerca fra tutti i sotto-elementi, ricorsivamente (quindi cercher&agrave; anche nei sotto-sotto-elementi, nei sotto-sotto-sotto-elementi e cos&igrave; via), finch&eacute; non ne trova uno che abbia il valore specificato come argomento nel suo attributo <em>id</em>. Se nessun elemento viene individuato, allora restituisce <em>null</em>.</p>
+ <pre>var el2 = el.getElementById(&quot;titolo&quot;);</pre>
+ <h3>getElementsByTag(&lt;string&gt;)</h3>
+ <p>Cerca ricorsivamente fra tutti i sotto-elementi, collezionando quelli corrispondenti al tag specificato, che restituisce in un array. Se nessun tag del tipo specificato viene individuato, restituisce un array vuoto.</p>
+ <pre>var elements = el.getElementsByTag(&quot;h1&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <h3>getElementsByAttribute(&lt;string&gt;, &lt;string&gt;)</h3>
+ <p>Cerca ricorsivamente fra tutti i sotto-elementi, collezionando quelli che hanno l'attributo specificato nel primo parametro con un valore uguale a quello specificato nel secondo. Restituisce un array con gli elementi in grado di soddisfare il requisito. Se nessun elemento viene individuato, restituisce un array vuoto.</p>
+ <pre>var elements = document.getElementsByAttribute(&quot;align&quot;, &quot;center&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <h3>searchElements(&lt;string&gt;)</h3>
+ <p>Cerca ricorsivamente fra tutti i sotto-elementi, restituendo un array con gli elementi in grado di soddisfare il particolare criterio fornito in argomento. Se nessun elemento viene individuato, restituisce un array vuoto.</p>
+ <pre>var elements = el.searchElements(&quot;table/tr/td/img(src=*.jpg)&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <p>I criteri di ricerca per questo tipo di metodi saranno illustrati <a href="#4.7">in seguito</a>.</p>
+ <h3>searchElement(&lt;string&gt;)</h3>
+ <p>Cerca ricorsivamente fra tutti i sotto-elementi, finch&eacute; non ne individua uno in grado di soddisfare il particolare criterio fornito in argomento. Se nessun elemento soddisfa il criterio restituisce <em>null</em>.</p>
+ <pre>var el2 = el.searchElement(&quot;ul/li&quot;);</pre>
+ <p>I criteri di ricerca per questo tipo di metodi saranno illustrati <a href="#4.7">in seguito</a>.</p>
+ <h3>getPreviousElement()</h3>
+ <p>Restituisce l'elemento che viene prima di quello corrente. Se l'elemento corrente &egrave; il primo del suo gruppo restituisce <em>null</em>.</p>
+ <pre>var p = el.getPreviousElement();</pre>
+ <h3>getNextElement()</h3>
+ <p>Restituisce l'elemento che viene dopo quello corrente. Se l'elemento corrente &egrave; l'ultimo del suo gruppo restituisce <em>null</em>.</p>
+ <pre>var n = el.getNextElement();</pre>
+ <h3>getParentElement()</h3>
+ <p>Restituisce l'elemento di cui quello corrente &egrave; figlio, cio&egrave; sotto-elemento. Se l'elemento corrente non ha un elemento genitore (accade quando l'elemento corrente &egrave; un elemento di primo livello nel documento) allora il metodo restituisce <em>null</em>.</p>
+ <pre>var p = el.getParentElement();</pre>
+ <a name="4.6"></a>
+ <h2>Metodi degli oggetti tag </h2>
+ <p>Se l'elemento che si sta manipolando rappresenta un tag HTML, oltre ai metodi descritti nel paragrafo precedente, sono disponibili anche alcune altre funzionalit&agrave;.</p>
+ <h3>getTagName()</h3>
+ <p>Restituisce il nome del tag. </p>
+ <pre>var tagname = el.getTagName();</pre>
+ <h3>getAttribute(&lt;string&gt;)</h3>
+ <p>Restituisce il valore dell'attributo specificato, o <em>null</em> se il tag non ha l'attributo desiderato.</p>
+ <pre>var attrValue = el.getAttribute(&quot;align&quot;); </pre>
+ <h3>isEmpty()</h3>
+ <p>Restituisce <em>true</em> se il tag &egrave; vuoto e non ha contenuto. </p>
+ <pre>var empty = el.isEmpty();</pre>
+ <h3>getInnerText()</h3>
+ <p>Restituisce il contenuto del tag convertendolo il testo semplice. </p>
+ <pre>var text = el.getInnerText();</pre>
+ <h3>getInnerHTML()</h3>
+ <p>Restituisce il contenuto del tag sotto forma di codice HTML. </p>
+ <pre>var html = el.getInnerHTML();</pre>
+ <h3>getOuterHTML()</h3>
+ <p>Restituisce il codice HTML che forma il tag stesso ed il suo contenuto. </p>
+ <pre>var html = el.getOuterHTML();</pre>
+ <h3>getLinkURL()</h3>
+ <p>Se il tag &egrave; <em>&lt;a&gt;</em> con un attributo <em>href</em> valido, questo metodo restituisce l'indirizzo collegato. Mentre il metodo <em>getAttribute(&quot;href&quot;) </em>restituisce il valore dell'attributo nudo e crudo, <em>getLinkURL()</em> fa un'analisi del valore e lo raffronta con altri parametri, come l'indirizzo del documento stesso ed eventuali impostazioni di base poste al suo interno, in modo da convertire i collegamenti relativi in indirizzo assoluti. Che poi &egrave; la stessa cosa che fa un browser quando si clicca su un collegamento relativo. E' possibile usare il valore restituito dal metodo con la funzione <em>openDocument()</em>, che accetta solo indirizzi assoluti, per realizzare la navigazione tra i documenti remoti descritta in precedenza.</p>
+ <pre>var elements = document.getElementsByTag(&quot;a&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  print(elements[i].getLinkURL());
+}</pre>
+ <h3>getImageURL()</h3>
+ <p>Se il tag &egrave; un <em>&lt;img&gt;</em> con un attributo <em>src</em> valido, questo metodo restituisce l'indirizzo dell'immagine richiamata. Come avviene per <em>getLinkURL()</em>, questo metodo non &egrave; un semplice alias di <em>getAttribute(&quot;src&quot;)</em>. Anche in questo caso l'indirizzo estratto viene esaminato e raffrontato con le informazioni sul documento, in modo da trasformare quando possibile i riferimenti relativi in indirizzi assoluti.</p>
+ <pre>var elements = document.getElementsByTag(&quot;img&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  print(elements[i].getImageURL());
+}</pre>
+ <a name="4.7"></a>
+ <h2>Criteri di ricerca degli elementi </h2>
+ <p>I criteri di ricerca possono essere utilizzati con i metodi <em>searchElement()</em> e <em>searchElements()</em> delle rappresentazioni di documenti ed elementi.</p>
+ <p>Un criterio di ricerca &egrave; anzitutto suddiviso da pi&ugrave; parti (<em>token</em>), separate da un carattere &quot;slash&quot;.</p>
+ <pre>token1/token2/token3</pre>
+ <p>La sequenza serve ad individuare un percorso tra i tag del documento. Per comprendere meglio si pu&ograve; svolgere un paragone con i percorsi usati da un file system per localizzare una risorsa. Un percorso come</p>
+ <pre>C:/dir1/dir2/file.ext</pre>
+ <p>significa che si sta richiedendo il file <em>file.ext</em>, che &egrave; nella directory <em>dir2</em>, che a sua volta &egrave; in <em>dir1</em>, e che a sua volta &egrave; contenuta nella radice del disco logico <em>C</em>.</p>
+ <p>I percorsi espressi in un criterio di ricerca di grab4j funzionano allo stesso modo, solo che invece che trattare directory e file fanno riferimento ai tag HTML del documento. Un percorso come</p>
+ <pre>html/body/p</pre>
+ <p>identifica qualsiasi elemento <em>&lt;p&gt;</em> che &egrave; contenuto dentro <em>&lt;body&gt;</em>, che a sua volta ha l'elemento <em>&lt;html&gt;</em> come padre.</p>
+ <p>Questi percorsi sono da intendersi come relativi rispetto all'elemento dal quale si lancia la ricerca. Solo se la si lancia direttamente con i metodi <em>searchElements()</em> o <em>searchElement()</em> di un documento assumono allora un significato assoluto.</p>
+ <p>Ogni parte di un percorso di ricerca deve seguire il modello:</p>
+ <pre>tagNamePattern[index](attribute1=valuePattern1)(attribute2=valuePattern2)(...)</pre>
+ <p>Il primo elemento del token &egrave; il pattern per il riconoscimento di un tag attraverso il suo nome, ed &egrave; l'unica parte sempre richiesta. Questo pattern supporta il wildcard asterisco, cio&egrave; un asterisco pu&ograve; essere utilizzato per indicare una sequenza di caratteri qualsiasi.</p>
+ <pre>html/body/*</pre>
+ <p>Questo criterio rintraccia tutti gli elementi che hanno per padre il tag <em>&lt;body&gt;</em>, che a sua volta deve essere dentro il blocco <em>&lt;html&gt; ... &lt;/html&gt;</em>.</p>
+ <pre>html/body/h*</pre>
+ <p>Questo, invece, cerca dentro <em>&lt;body&gt;</em> i tag il cui nome inizia per <em>h</em>, ad esempio <em>&lt;h1&gt;</em>, <em>&lt;h2&gt;</em>, <em>&lt;h3&gt;</em> e cos&igrave; via. </p>
+ <p>Se ci sono pi&ugrave; elementi che soddisfano il criterio di ricerca &egrave; possibile richiedere che ne venga considerato soltanto uno, attraverso un indice: </p>
+ <pre>html/body/div[1]</pre>
+ <p>Questo criterio restituisce il secondo <em>&lt;div&gt;</em> tra tutti quelli che si trovano nel <em>&lt;body&gt;</em>. Si osservi che il primo elemento di un gruppo ha indice 0, e quindi l'indice 1 identifica il secondo elemento, 2 il terzo e cos&igrave; via.</p>
+ <pre>html/body/h*[2]</pre>
+ <p>Questo criterio individua il terzo elemento nella lista di quelli il cui nome inizia con <em>h</em> e sono figli di <em>&lt;body&gt;</em>.</p>
+ <p>Ricerche pi&ugrave; dettagliate prendono in considerazione anche gli attributi dei tag.</p>
+ <pre>html/body/div(id=d1)</pre>
+ <p>Questo criterio ricerca, sempre all'interno dell struttura <em>&lt;html&gt; &lt;body&gt; ... &lt;/body&gt; &lt;/html&gt;</em>, tutti quei <em>&lt;div&gt;</em> aventi un attributo <em>id </em>con valore <em>d1</em>.</p>
+ <p>Il wildcard asterisco pu&ograve; essere usato nei valori degli attributi:</p>
+ <pre>html/body/div(id=*)</pre>
+ <p>Questa ricerca, rispetto alla precedente, seleziona tutti i <em>&lt;div&gt;</em> che hanno un attributo <em>id</em>, indipendentemente dal suo valore.</p>
+ <pre>html/body/div(id=d*)</pre>
+ <p>Questo criterio richiede invece che il valore dell'attributo cominci con la lettera <em>d</em>. </p>
+ <p>Siccome un tag pu&ograve; avere pi&ugrave; attributi, un criterio di ricerca pu&ograve; specificare pi&ugrave; restrizioni di attributo insieme.</p>
+ <pre>html/body/div(id=d*)(align=left)</pre>
+ <p>Questo criterio cerca i <em>&lt;div&gt;</em> che hanno un attributo <em>id</em> il cui valore inizia per <em>d</em>, ed un attributo <em>align</em> il cui valore deve necessariamente essere <em>left</em>.</p>
+ <p>L'uso dei selettori sugli attributi non esclude quello del selettore d'indice.</p>
+ <pre>html/body/div[1](id=d*)(align=left)</pre>
+ <p>Questo criterio di ricerca &egrave; identico alla precedente, ma restituisce soltando il secondo risultato (indice 1) fra tutti quelli individuati.</p>
+ <p>Talvolta non si sa a quale profondit&agrave; si trova un elemento desiderato, oppure non &egrave; importante saperlo. Per questo &egrave; possibile usare un token di &quot;ricerca ricorsiva&quot;, costituito da una sequenza di tre punti.</p>
+ <pre>html/body/.../table</pre>
+ <p>Questo criterio restituisce tutti gli elementi <em>&lt;table&gt;</em> che ci sono nel corpo del documento, sia se sono direttamente dentro <em>&lt;body&gt;</em> sia se sono dentro gli elementi figli di <em>&lt;body&gt;</em>, o i figli dei figli di <em>&lt;body&gt;</em> e cos&igrave; via. Il token di ricerca ricorsiva tra i sotto-elementi, quindi, sta ad indicare una profondit&agrave; qualsiasi.</p>
+ <p>L'esempio appena visto restituisce sia le tabelle realizzate con struttura del tipo</p>
+ <pre>&lt;html&gt;&lt;body&gt;&lt;table&gt;...</pre>
+ <p>sia quelle annidate, come </p>
+ <pre>&lt;html&gt;&lt;body&gt;&lt;div&gt;&lt;div&gt;table&gt;...</pre>
+ <p>Durante la composizione di un criterio di ricerca pu&ograve; capitare che, per il valore di un attributo o per qualche altro campo, si debba fare un uso di un carattere particolare o riservato. E' pertanto possibile indicare il carattere problematico con una sequenza del tipo <em>&lt;xx&gt;</em>, dove <em>xx</em> &egrave; il codice esadecimale del carattere nel charset in uso.</p>
+ <p>Si immagini  di voler cercare un elemento <em>&lt;img&gt;</em> con l'attributo <em>alt</em> uguale alla stringa <em>Foto di Carlo (2007)</em>. Il criterio</p>
+ <pre>.../img(alt=Foto di Carlo (2007))</pre>
+ <p>non &egrave; valido, poich&eacute; le parentesi tonde intorno all'anno vanno a collidere con quelle utilizzate sintatticamente come contenitori dei selettori sugli attributi. In questo caso &egrave; sufficiente verificare quale sia il codice esadecimale delle parentesi tonde nel charset utilizzato (le parentesi tonde in ASCII hanno codice esadecimale rispettivamente uguale a 28 e a 29) e riscrivere il criterio come segue:</p>
+ <pre>.../img(alt=Foto di Carlo &lt;28&gt;2007&lt;29&gt;)</pre>
+ <a name="4.8"></a>
+ <h2>Uso di classi Java nello script di grabbing </h2>
+ <p>Oltre alla libreria ECMAScript ed oltre alle funzionalit&agrave; messe a disposizione da grab4j, gli script di grabbing possono utilizzare qualsiasi classe Java dell'ambiente che li esegue. A conti fatti, quindi, il linguaggio di scripting usato per gli script di grabbing &egrave;  molto pi&ugrave; potente del JavaScript tradizionale.</p>
+ <p>Proprio come in Java, &egrave; conveniente fare l'import delle classi e dei pacchetti che si intende utilizzare.</p>
+ <p>Per importare una classe che fa parte di un pacchetti nella gerarchia <em>java.*</em> si usa l'istruzione:</p>
+ <pre>importClass(&lt;class&gt;);</pre>
+ <p>Ad esempio:</p>
+ <pre>importClass(java.util.ArrayList);</pre>
+ <p>Le classi che vengono da pacchetti non <em>java.*</em> possono essere importate cos&igrave;:</p>
+ <pre>importClass(Packages.&lt;class&gt;);</pre>
+ <p>Ad esempio:</p>
+ <pre>importClass(Packages.it.sauronsoftware.grab4j.examples2.Item);</pre>
+ <p>Il discorso &egrave; simile per importare interi pacchetti. Se il pacchetto da importare &egrave; nella gerarchia <em>java.*</em>:</p>
+ <pre>importPackage(&lt;package&gt;);</pre>
+ <p>Ad esempio:</p>
+ <pre>importPackage(java.util);</pre>
+ <p>Se il pacchetto &egrave; di atra gerarchia:</p>
+ <pre>importPackage(Packages.&lt;package&gt;);</pre>
+ <p>Ad esempio:</p>
+ <pre>importPackage(Packages.it.sauronsoftware.grab4j.examples2);</pre>
+ <p>Una volta che le classi sono state importate, possono essere utilizzate in maniera molto intuitiva, pi&ugrave; o meno come si farebbe  in Java:</p>
+ <pre>importClass(java.util.ArrayList);
+var list = new ArrayList();
+// ...</pre>
+ <a name="4.9"></a>
+ <h2>Esempi</h2>
+ <p>Alcuni esempi possono essere trovati nella directory <em><a href="examples">examples</a></em>.</p>
+</body>
+</html>

@@ -1,0 +1,1 @@
+java -cp ..\libs\grab4j-1.0\grab4j.jar;..\libs\grab4j-1.0\lib\nekohtml.jar;..\libs\grab4j-1.0\lib\xercesImpl.jar;..\libs\grab4j-1.0\lib\xml-apis.jar;..\libs\grab4j-1.0\lib\js.jar;..\bin com.aubert.recipes.Grabber

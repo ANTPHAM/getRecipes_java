@@ -1,0 +1,293 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>grab4j manual</title>
+</head>
+
+<body>
+ <h1>grab4j manual</h1>
+ <ul>
+   <li><a href="#1">Before you start</a></li>
+   <li><a href="#2">Web-grabbing with grab4j</a></li>
+   <li><a href="#3">The Java-driven approach</a></li>
+   <li><a href="#4">The JavaScript-driven approach</a>
+     <ul>
+       <li><a href="#4.1">The grabbing script</a></li>
+       <li><a href="#4.2">Global references</a></li>
+       <li><a href="#4.3">Global functions</a></li>
+       <li><a href="#4.4">Document methods</a></li>
+       <li><a href="#4.5">Element methods</a></li>
+       <li><a href="#4.6">Tag methods</a></li>
+       <li><a href="#4.7">Search criteria</a></li>
+       <li><a href="#4.8">Java classes within the script</a></li>
+       <li><a href="#4.9">Examples</a></li>
+     </ul>
+   </li>
+ </ul>
+ <a name="1"></a>
+ <h1>Before you start</h1>
+ <p>In order to use the grab4j grabber in your Java software, you have to make visible the <em>grab4j.jar</em> file to your application adding it to the CLASSPATH. Since the grab4j library depends on third parties jars (placed in the <em>lib</em> directory of the distribution package) you also have to add them to the CLASSPATH.</p>
+ <p>The grab4j library requires a Java runtime environment J2SE 1.4 or later.</p>
+ <a name="2"></a>
+ <h1>Web-grabbing with grab4j</h1>
+ <p>Grabbing informations from an online HTML document is a three-step operation:</p>
+ <ol>
+   <li>Retrieving the document.</li>
+   <li>Parsing the document.</li>
+   <li>Extracting informations from the document representation, running a grabbing-logic routine.</li>
+ </ol>
+ <p>The main issue concerns the grabbing-logic. Once the document is retrieved and parsed, it can be accessed and explored through an object representation. A document representation contains both useful and useless informations. You may be interested just in  a title, a text and a date, but a web page usually contains also a navigation bar, a site menu and other  elements quite useless in the context of the grabbing operation. So you have to run a grabbing-logic routine, whose goal is to extract only the informations you need, discarding the others.</p>
+ <p>The grab4j library allows you to retrieve and parse any online web page. It also gives you all the tools you need to build and run your grabbing-logic routine. 
+   The library lets you choose between two grabbing approaches. The first one is Java-driven: get the document representation and navigate its contents by calling the grab4j methods. You can extract all you need. Compile your classes, package your application and let it run. Some time later, however, the online page structure could change, and your grabbing-logic routine probably will not work anymore. If that happens, you have to write down a new grabbing-logic routine, re-compile your application, re-package it and re-distribute or re-deploy it. Very boring, isn't it?<br />
+   Here it comes the  JavaScript-driven grabbing approach, brought to you by the grab4j library. Instead of writing the grabbing-logic routine in Java, write it in JavaScript and put the code in a separate file. The grab4j library can load and run the JavaScript routine. If the online page changes in its structure, write down a new grabbing-logic script and replace the previous file. No rebuild operation is needed.</p>
+ <a name="3"></a>
+ <h1>The Java-driven approach</h1>
+ <p>Use the <em>it.sauronsoftware.grab4j.html.HTMLDocumentFactory</em> class to build a document representation.</p>
+ <pre>HTMLDocument doc = HTMLDocumentFactory.buildDocument(&quot;http://www.host.com/page.html&quot;);</pre>
+ <p>The returned <em>it.sauronsoftware.grab4j.html.HTMLDocument</em> object is the representation of the parsed document. You can search within its elements with the methods <em>getElements()</em>, <em>getElementCount()</em>, <em>getElement()</em>, <em>getElementById()</em>, <em>getElementsByAttribute()</em> and <em>getElementsByTag()</em>. Advanced search capabilities are given by the <em>searchElements()</em> and the <em>searchElement()</em> methods, and by the <em>it.sauronsoftware.grab4j.html.search.Criteria</em> class.</p>
+ <p>The  elements in the document are represented by the instances of the <em>it.sauronsoftware.grab4j.html.HTMLElement</em> class. You can often cast a generic <em>HTMLElement</em> reference to a more specific one, such <em>HTMLText</em>, <em>HTMLTag</em>, <em>HTMLImage</em> and <em>HTMLLink</em>.</p>
+ <p>Please refer to the library <a href="javadoc/index.html">javadocs</a> to gain more details.</p>
+ <a name="4"></a>
+ <h1>The JavaScript-driven approach</h1>
+ <p>The <em>it.sauronsoftware.grab4j.WebGrabber</em> class lets you grab a web page with a sole static call:</p>
+ <pre>URL pageUrl = new URL(&quot;http://www.host.com/page.html&quot;);
+File scriptFile = new File(&quot;grabbing-logic.js&quot;);
+Object result = WebGrabber.grab(pageUrl, scriptFile);</pre>
+ <p>The document is fetched and parsed, and then the grabbing-logic script is run. The result setted by the script is returned to the caller.</p>
+ <p>Please refer to the library <a href="javadoc/it/sauronsoftware/grab4j/WebGrabber.html">javadocs</a> to gain more details about the <em>WebGrabber</em> class.</p>
+ <a name="4.1"></a>
+ <h2>The grabbing script</h2>
+ <p>The grabbing script must be <a href="http://en.wikipedia.org/wiki/ECMAScript">ECMAScript</a>  compliant. You can use every ECMAScript standard function, object or constant, such <em>parseInt()</em>, <em>isNaN()</em>, <em>Math</em> and <em>Infinity</em>.</p>
+ <a name="4.2"></a>
+ <h2>Global references</h2>
+ <p>In addition to the ECMAScript built-ins you receive also a pair of global grabbing-related variables.</p>
+ <h3>document</h3>
+ <p>This is the input variable for your script. It is the retrieved document representation. You can call this object methods to extract the informations you need.</p>
+ <pre>titleElement = document.getElementById(&quot;title&quot;);</pre>
+ <h3>result</h3>
+ <p>This is the output variable for your script. When the work is done, set it to a reference to the result of your grabbing attivity. The referred value will be returned, as a Java object, to the caller routine.</p>
+ <pre>result = myResult; </pre>
+ <a name="4.3"></a>
+ <h2>Global functions </h2>
+ <p>In addition to the ECMAScript built-ins you receive also some global grabbing-related functions. </p>
+ <h3>print(&lt;string&gt;)</h3>
+ <p>It sends a string to the standard output channel. Useful for debug purposes.</p>
+ <pre>print(&quot;hello world&quot;);
+print(document.getElementCount());</pre>
+ <h3>openDocument(&lt;string&gt;)</h3>
+ <p>It retrieves and parses the document at URL given as parameter, and returns a reference to its object representation. This function allows the script to open and grab other documents besides the one given with the <em>document</em> reference, which can work as a starting point. Picture the document parsed and passed to the script contains just a list of links to other documents with the real contents you are interested in. If this happens you will find the <em>openDocument() </em>function  very useful!</p>
+ <pre>var doc2 = openDocument(&quot;http://www.anothersite.com/anotherpage.html&quot;);</pre>
+ <h3>encodeEntities(&lt;string&gt;)</h3>
+ <p>This one takes a string and encodes it as HTML. It means that all reserved or troublesome characters in the given string will be changed in HTML entities. The new string with the encoded entities is returned to the caller.</p>
+ <pre>var str = encodeEntities(&quot;&lt;test&gt;&quot;);</pre>
+ <h3>decodeEntities(&lt;string&gt;)</h3>
+ <p>This one takes a string and decodes all the HTML entities in it. A new string with the decoded entities is generated and returned to the caller.</p>
+ <pre>var str = decodeEntities(&quot;&amp;lt;test&amp;gt;&quot;);</pre>
+ <a name="4.4"></a>
+ <h2>Document methods</h2>
+ <p>Of course, you can explore and search a document representation (the one brought by the <em>document</em> reference, or another one obtained with a call to the <em>openDocument()</em> function), calling the methods:</p>
+ <h3>getElementCount()</h3>
+ <p>It returns the number of the first-level elements in the document.</p>
+ <pre>var n = document.getElementCount();</pre>
+ <h3>getElement(&lt;integer&gt;)</h3>
+ <p>It returns the first-level element at the given index.</p>
+ <pre>for (var i = 0; i &lt; document.getElementCount(); i++) {
+  var el = document.getElement(i);
+  // ...
+}</pre>
+ <h3>getElementById(&lt;string&gt;)</h3>
+ <p>It explores recursively the elements tree, starting from the top-level ones, searching for the first occurrence of an element with the given value in its &quot;id&quot; attribute. If no element is found, it returns <em>null</em>.</p>
+ <pre>var el = document.getElementById(&quot;title&quot;);</pre>
+ <h3>getElementsByTag(&lt;string&gt;)</h3>
+ <p>It explores recursively the elements tree, starting from the top-level ones, searching for the occurrences of the given tag. It returns an element references array. If no element is found, it returns a zero length array.</p>
+ <pre>var elements = document.getElementsByTag(&quot;h1&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <h3>getElementsByAttribute(&lt;string&gt;, &lt;string&gt;)</h3>
+ <p>It explores recursively the elements tree, starting from the top-level ones, selecting the ones whose have a given attribute with a given value. It returns an element references array. If no element is found, it returns a zero length array.</p>
+ <pre>var elements = document.getElementsByAttribute(&quot;align&quot;, &quot;center&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <h3>searchElements(&lt;string&gt;)</h3>
+ <p>It searches recursively inside the document elements, returning an array with the elements matched by the given criteria. If no element is found, it returns a zero length array.</p>
+ <pre>var elements = document.searchElements(&quot;html/body/.../img(src=*.jpg)&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <p>More about search criterias will be explained <a href="#4.7">later</a>.</p>
+ <h3>searchElement(&lt;string&gt;)</h3>
+ <p>It searches recursively inside the document elements, returning the first  element matched by the given criteria. If no element is found, it returns <em>null</em>.</p>
+ <pre>var el = document.searchElement(&quot;html/body/ul/li&quot;);</pre>
+ <p>More about search criterias will be explained <a href="#4.7">later</a>.</p>
+ <a name="4.5"></a>
+ <h2>Element methods</h2>
+ <p>Every element representation gives you the following methods.</p>
+ <h3>getElementCount()</h3>
+ <p>It returns the number of the sub-elements owned by the current element.</p>
+ <pre>var n = el.getElementCount();</pre>
+ <h3>getElement(&lt;integer&gt;)</h3>
+ <p>It returns the sub-element at the given index.</p>
+ <pre>for (var i = 0; i &lt; el.getElementCount(); i++) {
+  var el2 = el.getElement(i);
+  // ...
+}</pre>
+ <h3>getElementById(&lt;string&gt;)</h3>
+ <p>It explores recursively the elements tree, starting from the current element children, searching for the first occurrence of an element with the given value in its &quot;id&quot; attribute. If no element is found, it returns <em>null</em>.</p>
+ <pre>var el2 = el.getElementById(&quot;title&quot;);</pre>
+ <h3>getElementsByTag(&lt;string&gt;)</h3>
+ <p>It explores recursively the elements tree, starting from the current element children, searching for the occurrences of the given tag. It returns an element references array. If no element is found, it returns a zero length array.</p>
+ <pre>var elements = el.getElementsByTag(&quot;h1&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <h3>getElementsByAttribute(&lt;string&gt;, &lt;string&gt;)</h3>
+ <p>It explores recursively the elements tree, starting from the current element children, selecting the ones whose have a given attribute with a given value. It returns an element references array. If no element is found, it returns a zero length array.</p>
+ <pre>var elements = document.getElementsByAttribute(&quot;align&quot;, &quot;center&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <h3>searchElements(&lt;string&gt;)</h3>
+ <p>It searches recursively within the current element children, returning an array with the elements matched by the given criteria. If no element is found, it returns a zero length array.</p>
+ <pre>var elements = el.searchElements(&quot;table/tr/td/img(src=*.jpg)&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  // ...
+}</pre>
+ <p>More about search criterias will be explained <a href="#4.7">later</a>.</p>
+ <h3>searchElement(&lt;string&gt;)</h3>
+ <p>It searches recursively within the current element children, returning the first element matched by the given criteria. If no element is found, it returns <em>null</em>.</p>
+ <pre>var el2 = el.searchElement(&quot;ul/li&quot;);</pre>
+ <p>More about search criterias will be explained <a href="#4.7">later</a>.</p>
+ <h3>getPreviousElement()</h3>
+ <p>It returns the previous element in the current element group, or <em>null</em> if the current element is the first one.</p>
+ <pre>var p = el.getPreviousElement();</pre>
+ <h3>getNextElement()</h3>
+ <p>It returns the next element in the current element group, or <em>null</em> if the current element is the last one.</p>
+ <pre>var n = el.getNextElement();</pre>
+ <h3>getParentElement()</h3>
+ <p>It returns the parent element of the current one, or <em>null</em> if the current element is a root element.</p>
+ <pre>var p = el.getParentElement();</pre>
+ <a name="4.6"></a>
+ <h2>Tag methods</h2>
+ <p>If you get an element which is the representation of any HTML tag, you can call:</p>
+ <h3>getTagName()</h3>
+ <p>It returns the current tag name.</p>
+ <pre>var tagname = el.getTagName();</pre>
+ <h3>getAttribute(&lt;string&gt;)</h3>
+ <p>It returns the value of the given attribute, or <em>null</em> if no attribute with the supplied name is found.</p>
+ <pre>var attrValue = el.getAttribute(&quot;align&quot;); </pre>
+ <h3>isEmpty()</h3>
+ <p>It returns true if the tag has no contents.</p>
+ <pre>var empty = el.isEmpty();</pre>
+ <h3>getInnerText()</h3>
+ <p>It extracts the tag contents as plain text.</p>
+ <pre>var text = el.getInnerText();</pre>
+ <h3>getInnerHTML()</h3>
+ <p>It returns the HTML code in the tag contents.</p>
+ <pre>var html = el.getInnerHTML();</pre>
+ <h3>getOuterHTML()</h3>
+ <p>It returns the HTML code with the tag and its contents.</p>
+ <pre>var html = el.getOuterHTML();</pre>
+ <h3>getLinkURL()</h3>
+ <p>Available only if the tag is <em>&lt;a&gt;</em> and it has a valid <em>href</em> attribute. It extracts and returns the link URL. While <em>getAttribute(&quot;href&quot;)</em> returns a &quot;raw&quot; value, this one checks the attribute value and returns it as an absolute URL. You can use it with the <em>openDocument()</em> function to load any linked document.</p>
+ <pre>var elements = document.getElementsByTag(&quot;a&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  print(elements[i].getLinkURL());
+}</pre>
+ <h3>getImageURL()</h3>
+ <p>Available only if the tag is <em>&lt;img&gt;</em> and it has a valid <em>src</em> attribute. It extracts and retuns the image source URL.  While <em>getAttribute(&quot;src&quot;)</em> returns a &quot;raw&quot; value, this one checks the attribute value and returns it as an absolute URL.</p>
+ <pre>var elements = document.getElementsByTag(&quot;img&quot;);
+for (var i = 0; i &lt; elements.length; i++) {
+  print(elements[i].getImageURL());
+}</pre>
+ <a name="4.7"></a>
+ <h2>Search criteria</h2>
+ <p>A search criteria string representation is splitted in several parts,
+ separated by a slash character:</p>
+ <pre>token1/token2/token3</pre>
+ <p>Each token is used to recognize a tag or a set of tags. The general model is
+ the following:</p>
+ <pre>tagNamePattern[index](attribute1=valuePattern1)(attribute2=valuePattern2)(...)</pre>
+ <p>The first element in the token model is the tag name pattern. It is usefull
+ to find the wanted tag(s). It is a wildcard pattern: the star character can
+ be used to match any characters sequence.</p>
+ <p>A first simple example:</p>
+ <pre>html/body/div</pre>
+ <p>This criteria finds all the "div" elements whose father is the "body" tag,
+ which in turn is inside a "html" tag.</p>
+ <p>A wildcard example:</p>
+ <pre>html/body/*</pre>
+ <p>This criteria finds all the elements whose father is the "body" tag, within
+ the "html" one.</p>
+ <p>Another one:</p>
+ <pre>html/body/h*</pre>
+ <p>This criteria finds all the elements whose father is the "body" tag and whose
+ name starts with the "h" letter, such "h1", "h2", "h3" and so on.</p>
+ <p>Using the index selector:</p>
+ <pre>html/body/div[1]</pre>
+ <p>This criteria returns the second "div" element whose father is the "body"
+ tag. Note that the index lesser value is 0, just like in arrays.</p>
+ <pre>html/body/h*[2]</pre>
+ <p>This criteria returns the third element whose father is the "body" tag and
+ whose name starts with the "h" letter.</p>
+ <p>Using attribute selector(s):</p>
+ <pre>html/body/div(id=d1)</pre>
+ <p>This one searches for divs with an attribute called "id", whose value is
+ exactly "d1".</p>
+ <p>The star wildcard is admitted in the value part of the selector:</p>
+ <pre>html/body/div(id=*)</pre>
+ <p>This one searches for divs with an attribute called "id", regardless of its
+ value.</p>
+ <pre>html/body/div(id=d*)</pre>
+ <p>This one searches for divs with an attribute called "id", whose value starts
+ with the "d" letter.</p>
+ <p>More attribute selectors can be combined together:</p>
+ <pre>html/body/div(id=d*)(align=left)</pre>
+ <p>A index selector and two attribute selectors in this example:</p>
+ <pre>html/body/div[1](id=d*)(align=left)</pre>
+ <p>This will search for the second "div" tag, inside the "html"-"body" sequence,
+ whose attribute "id" has a value starting with "d" and whose attribute
+ "align" is exactly "left".</p>
+ <p>Search criterias admit a special token, called the "recursive deep token" and
+ represented by a sequence of three points.</p>
+ <pre>html/body/.../table</pre>
+ <p>This criteria will search for tables inside the body of the document,
+ regardless if they are placed straight under the "body" tag or not. This is,
+ of course, a recursive search within the body sub-elements. The criteria will
+ return all the tables like the following</p>
+ <pre>&lt;html&gt;&lt;body&gt;&lt;table&gt;...</pre>
+ <p>but it will return also all the ones like</p>
+ <pre>&lt;html&gt;&lt;body&gt;&lt;div&gt;&lt;div&gt;table&gt;...</pre>
+ <p>Escaping of reserved characters is possibile through the sequence
+ <em>&lt;xx&gt;</em>, where <em>xx</em> is the exadecimal code of the
+ escaped character.</p>
+ <a name="4.8"></a>
+ <h2>Java classes within the script</h2>
+ <p>Since the script is executed by a Java environment, you can gain access to any Java class from its code.</p>
+ <p>If the class is in the <em>java.*</em> package hierarchy you can import as follows:</p>
+ <pre>importClass(&lt;class&gt;);</pre>
+ <p>In example:</p>
+ <pre>importClass(java.util.ArrayList);</pre>
+ <p>The other package hierarchies can be imported as follows:</p>
+ <pre>importClass(Packages.&lt;class&gt;);</pre>
+ <p>In example:</p>
+ <pre>importClass(Packages.it.sauronsoftware.grab4j.examples2.Item);</pre>
+ <p>To import a package in the <em>java.*</em> hierarchy:</p>
+ <pre>importPackage(&lt;package&gt;);</pre>
+ <p>In example:</p>
+ <pre>importPackage(java.util);</pre>
+ <p>The other package hierarchies can be imported as follows:</p>
+ <pre>importPackage(Packages.&lt;package&gt;);</pre>
+ <p>In example:</p>
+ <pre>importPackage(Packages.it.sauronsoftware.grab4j.examples2);</pre>
+ <p>Once a Java class has been imported you can use it in the usual way:</p>
+ <pre>importClass(java.util.ArrayList);
+var list = new ArrayList();
+// ...</pre>
+ <a name="4.9"></a>
+ <h2>Examples</h2>
+ <p>Some working examples can be found in the <em><a href="examples">examples</a></em> directory within the distribution package. </p>
+</body>
+</html>
